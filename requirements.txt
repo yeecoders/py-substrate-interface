@@ -4,4 +4,4 @@ idna==2.8
 requests==2.21.0
 urllib3==1.24.2
 
-https://github.com/polkascan/py-scale-codec/tarball/master#egg=scalecodec
+https://github.com/polkascan/py-scale-codec/tarball/milestone2#egg=scalecodec
