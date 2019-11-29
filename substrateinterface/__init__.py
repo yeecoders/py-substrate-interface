@@ -69,6 +69,17 @@ class SubstrateInterface:
 
         return json_body
 
+    def get_ShardCount(self):
+        response = self.__rpc_request("system_getShardCount", [])
+        return response.get('result')
+    def get_Balance(self,address):
+        response = self.__rpc_request("state_getBalance", [address])
+        return response.get('result')
+
+    def get_Nonce(self,address):
+        response = self.__rpc_request("state_getNonce", [address])
+        return response.get('result')
+
     def get_system_name(self):
         response = self.__rpc_request("system_name", [])
         return response.get('result')
@@ -122,7 +133,7 @@ class SubstrateInterface:
         return int(response['result']['number'], 16)
 
     def get_block_metadata(self, block_hash, decode=True):
-        response = self.__rpc_request("state_getMetadata", [block_hash])
+        response = self.__rpc_request("state_getMetadata", [])
 
         if response.get('result'):
 
@@ -151,7 +162,11 @@ class SubstrateInterface:
         :return:
         """
         storage_hash = self.generate_storage_hash(module, function, params, hasher)
+        print('start storage_hash response {} =='.format(storage_hash))
+        print('start block_hash response {} =='.format(block_hash))
+
         response = self.__rpc_request("state_getStorageAt", [storage_hash, block_hash])
+        print('start  response {} =='.format(response))
 
         if 'result' in response:
 
@@ -169,11 +184,15 @@ class SubstrateInterface:
 
     def get_block_events(self, block_hash, metadata_decoder=None):
         response = self.__rpc_request("state_getStorageAt", [STORAGE_HASH_SYSTEM_EVENTS, block_hash])
+        print('start get_block_events response {} =='.format(response))
+        if response.get('result')== None or response.get('result') == 'null':
+            return None
 
         if response.get('result'):
 
             if metadata_decoder:
-
+                print("get_block_events in substrateinterface --")
+                print(response.get('result'))
                 # Process events
                 events_decoder = EventsDecoder(
                     data=ScaleBytes(response.get('result')),
@@ -188,8 +207,8 @@ class SubstrateInterface:
         else:
             raise SubstrateRequestException("Error occurred during retrieval of events")
 
-    def get_block_runtime_version(self, block_hash):
-        response = self.__rpc_request("chain_getRuntimeVersion", [block_hash])
+    def get_block_runtime_version(self):
+        response = self.__rpc_request("chain_getRuntimeVersion", [])
         return response.get('result')
 
     def generate_storage_hash(self, storage_module, storage_function, params=None, hasher=None):
