@@ -40,6 +40,7 @@ class SubstrateInterface:
         self._version = None
         self.default_headers = {
             'content-type': "application/json",
+            'Connection': 'close',
             'cache-control': "no-cache"
         }
 
@@ -52,22 +53,31 @@ class SubstrateInterface:
             "id": self.request_id
         }
 
-        response = requests.request("POST", self.url, data=json.dumps(payload), headers=self.default_headers)
+        try:
+            s = requests.session()
+            s.keep_alive = False
 
-        self.request_id += 1
+            response = requests.request("POST", self.url, data=json.dumps(payload), headers=self.default_headers,
+                                        timeout=5)
+            self.request_id += 1
 
-        if response.status_code != 200:
-            raise SubstrateRequestException("RPC request failed with HTTP status code {}".format(response.status_code))
+            if response.status_code != 200:
+                raise SubstrateRequestException(
+                    "RPC request failed with HTTP status code {}".format(response.status_code))
 
-        json_body = response.json()
+            json_body = response.json()
 
-        if json_body.get('error'):
-            raise SubstrateRequestException("RPC request failed with error code {} and message \"{}\"".format(
-                json_body['error']['code'],
-                json_body['error']['message']
-            ))
+            if json_body.get('error'):
+                raise SubstrateRequestException("RPC request failed with error code {} and message \"{}\"".format(
+                    json_body['error']['code'],
+                    json_body['error']['message']
+                ))
 
-        return json_body
+            return json_body
+
+        except requests.exceptions.ConnectTimeout:
+            print('requests.exceptions.ConnectTimeout-'+str(self.url)+'-'+str(method)+'-params-'+str(params)+'==is timeout!')
+
 
     def get_ShardCount(self):
         response = self.__rpc_request("system_getShardCount", [])
@@ -166,7 +176,7 @@ class SubstrateInterface:
         print('start block_hash response {} =='.format(block_hash))
 
         response = self.__rpc_request("state_getStorageAt", [storage_hash, block_hash])
-        print('start  response {} =='.format(response))
+        print('storage_hash start  response {} =='.format(response))
 
         if 'result' in response:
 
